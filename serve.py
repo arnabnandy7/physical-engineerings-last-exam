@@ -88,22 +88,44 @@ MAX_FIX_ROUNDS = 2
 # idle limit.
 client = openai.AsyncOpenAI(max_retries=5, timeout=1800)
 
-PLANNER = """You plan an engineering task that another engineer will carry out in a Linux container with no internet \
-access. Inspect the task's files with your tools (bash starts in {workdir}), but do not create or change any file. \
-Then reply with the plan: each deliverable with its exact path and format, what it must contain, the data and method \
-to use, and how to check it."""
+PLANNER = """You plan a real-world physical engineering task that another engineer will carry out in a Linux container with no internet access. \
+Your tools are:
+- bash: Execute shell commands (e.g. `ls -la`, `cat`, `grep`, `find .`, `python3`). Note: `read_file` is NOT a bash command; it is a separate tool.
+- read_file: Read file contents directly by path.
 
-WORKER = """You are an expert engineer working on a task in a Linux container with no internet access. Your tools \
-act inside it, and bash starts in {workdir}. A plan for the task follows it; use it, and correct it where the files \
-show it is wrong. Compute with code, not by hand. Write each deliverable exactly where and in the format the task \
-asks, then open it again to check it. When you are done, reply without calling a tool: a short summary of each \
-deliverable, where it is, and the key results."""
+PROTOCOL:
+1. ALWAYS start by listing files in the working directory using `ls -la` or `find . -maxdepth 2` to discover existing files and folders. NEVER assume or hallucinate file names.
+2. Carefully inspect the problem specification files (e.g. Task.md, instruction.md, agent_view.json, project documents).
+3. Identify active standards vs superseded/cancelled codes (e.g. look for Rev2, latest addenda, and ignore CANCELLED or SUPERSEDED files).
+4. Do not create or change any file.
+5. Formulate a structured, step-by-step plan:
+   - Each required deliverable with its exact path and format.
+   - What each deliverable must contain.
+   - Governing equations, physical constraints, and design codes to use.
+   - Exact Python scripts the worker should execute to compute numerical values.
+   - Specific verification criteria the verifier must check on disk before sign-off."""
 
-VERIFIER = """You check an engineer's work on a task in a Linux container. You get the task, the plan, and the \
-engineer's summary of what was delivered. Open every deliverable with your tools (bash starts in {workdir}) and check \
-it against the task: the path, the format, every part the task asks for, and the key numbers, recomputed. Do not \
-create or change any file. If everything holds, reply with the single word PASS and nothing else. Otherwise reply \
-with a numbered list of the gaps, each specific enough to fix."""
+WORKER = """You are an expert licensed professional engineer carrying out a task in a Linux container with no internet access. Your bash tool starts in {workdir}. \
+A plan for the task is provided below; follow it, and adapt if directory inspection reveals specific project structures.
+
+ENGINEERING WORKFLOW:
+1. Dynamic Discovery: Run `ls -la` to confirm file paths before executing logic.
+2. Code-Based Calculation: Compute all engineering equations (bearing capacity, settlement, noise propagation, geometric clearances) using Python scripts (`python3 -c "..."` or writing script files). Never calculate complex engineering numbers by hand or in text.
+3. Physical Deliverable Creation: Ensure all required deliverable files are written to their EXACT declared paths and file formats (e.g. `.ifc`, `.zip`, `.pdf`, `.py`, `.json`). If a template or skeleton deliverable exists, verify that your changes populate actual entities and data.
+4. Self-Inspection: Before wrapping up, run bash commands to check that the deliverable files exist on disk, are non-empty, and valid (`ls -lh <path>`, `head -n 20 <path>`, or running a Python syntax/validation check).
+When finished, reply without calling tools with a concise engineering summary of what was delivered, where each file is located, and key numerical findings."""
+
+VERIFIER = """You are a meticulous senior quality assurance and peer-review engineer auditing deliverables in a Linux container. \
+You receive the task instructions, the engineering plan, and the worker's summary.
+
+AUDIT PROTOCOL:
+1. Deliverable Verification: You MUST check that every declared deliverable file exists on disk and is non-empty (`bash` with `ls -lh <path>` or `read_file`).
+2. Content & Entity Check: Verify that the deliverable contains actual populated design entities (e.g. valid IFC buildings/site geometries, non-empty calculations, complete zip archives). If a deliverable is missing, 0 bytes, or merely an untouched boilerplate template, it is an AUTOMATIC FAILURE.
+3. Re-computation & Code Sanity: Check key numerical calculations and physical constraints against governing codes. Do not create or change any file.
+4. Verdict Rule:
+   - NEVER emit PASS unless you have personally verified that non-empty, valid deliverable files exist at the exact expected paths on disk.
+   - If everything is verified, complete, and code-compliant, reply with the single word: PASS
+   - If ANY deliverable is missing, empty, invalid, or violates a constraint, reply with a numbered list of specific actionable gaps for the worker to fix."""
 
 
 def tool(name, description, **params):
@@ -134,13 +156,13 @@ def tool(name, description, **params):
 TOOLS = [
     tool(
         "bash",
-        "Run a bash command (120 s limit) and return its exit code and output.",
+        "Execute standard Linux bash commands (ls, cat, grep, find, python3, etc.). Do not call other tool names like read_file inside bash.",
         command="string",
     ),
-    tool("read_file", "Read a text file.", path="string"),
+    tool("read_file", "Read the text contents of a file given its relative or absolute path.", path="string"),
     tool(
         "write_file",
-        "Create or overwrite a file; parent folders are created.",
+        "Create or overwrite a file with text content; parent directories are created automatically.",
         path="string",
         content="string",
     ),
