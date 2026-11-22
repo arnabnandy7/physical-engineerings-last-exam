@@ -31,6 +31,7 @@ import asyncio
 import json
 import os
 import re
+import secrets
 
 import openai
 import taskbridge
@@ -102,33 +103,33 @@ PROTOCOL:
    - Each required deliverable with its exact path and format.
    - What each deliverable must contain.
    - Governing equations, physical constraints, and design codes to use.
-   - Exact Python scripts the worker should execute to compute numerical values.
+   - Exact Python scripts the worker should write using `write_file` or execute inline to compute numerical values or build deliverables. DO NOT suggest running non-existent generator scripts.
    - Specific verification criteria the verifier must check on disk before sign-off."""
 
 WORKER = """You are an expert licensed professional engineer carrying out a task in a Linux container with no internet access. Your bash tool starts in {workdir}. \
 A plan for the task is provided below; follow it, and adapt if directory inspection reveals specific project structures.
 
-ENGINEERING WORKFLOW:
-1. Dynamic Discovery: Run `ls -la` to confirm file paths before executing logic. Inspect any provided `docs/` or example files (such as `docs/example.ifc` or similar templates) to understand required schemas and syntax.
-2. Template Preservation: If a deliverable file or skeleton template already exists on disk (e.g. in `submission/` or `output/`), inspect it (`cat` or `head`) and build upon it. NEVER overwrite a deliverable with an empty file (`""`), a dummy comment, or incorrect format (e.g. do not write JSON to an IFC/STEP file).
-3. Code-Based Calculation: Compute all engineering equations (bearing capacity, settlement, noise propagation, geometric clearances) using Python scripts (`python3 -c "..."` or writing script files). Never calculate complex engineering numbers by hand or in text.
+CRITICAL RULES:
+1. NO PRE-EXISTING HELPER SCRIPTS: There are NO scripts like `create_*.py`, `convert_*.py`, `process_*.py` installed in the workspace. NEVER attempt to run a python script unless you verify it exists with `ls` or you just created it using `write_file`. To perform calculations or generate files, either write your own script using `write_file` or execute inline Python with `python3 -c "..."`.
+2. YOU MUST WRITE THE DELIVERABLES: Do not output markdown outlines, future plans, or JSON blocks explaining what to do. You must call tools directly (`write_file` or `bash`) to write the actual deliverables to disk.
+3. Template Preservation: If a deliverable file or skeleton template already exists on disk (e.g. in `submission/` or `output/`), inspect it (`cat`, `head`, or `read_file`) and build upon it. NEVER overwrite a deliverable with an empty file (`""`), a dummy comment, or incorrect format.
 4. Physical Deliverable Creation: Ensure all required deliverable files are written to their EXACT declared paths and file formats (e.g. `.ifc`, `.zip`, `.pdf`, `.py`, `.json`). For IFC files, write valid ISO-10303-21 STEP text matching `docs/example.ifc`. For zip files, use `python3 -m zipfile` or `zip`.
-5. ACTION OVER TALK: When asked to create or fix deliverables, you MUST call tools (`write_file` or `bash`). Never reply with text explaining what you plan to do or agreeing with feedback without executing the tool calls to update the files on disk first.
-6. Self-Inspection: Before wrapping up, run bash commands to check that the deliverable files exist on disk at their exact paths, are non-empty, and valid (`ls -lh <path>`, `head -n 20 <path>`, or running a Python syntax/validation check).
+5. Local Oracles & Validation: If an oracle or validation script (e.g. `oracle_client.py`, `tests/`, `validate.py`) exists in the directory, run it (`python3 <script>`) to verify your solution against the constraints before wrapping up.
+6. Self-Inspection: Before wrapping up, run bash commands to verify that deliverable files exist at their exact relative paths, are non-empty, and valid (`ls -lh <path>`, `head -n 20 <path>`).
 When finished, reply without calling tools with a concise engineering summary of what was delivered, where each file is located, and key numerical findings."""
 
 VERIFIER = """You are a meticulous senior quality assurance and peer-review engineer auditing deliverables in a Linux container. \
 You receive the task instructions, the engineering plan, and the worker's summary.
 
 AUDIT PROTOCOL:
-1. Deliverable Path Verification: You MUST check that every declared deliverable file exists on disk at its EXACT relative path (e.g. `submission/<filename>`, `output/<filename>`, or discover via `find . -type f`). Do NOT check the root directory if the file is specified in a subdirectory.
-2. Content & Entity Check: Verify that the deliverable contains actual populated design entities (e.g. valid IFC buildings/site geometries in STEP format, non-empty calculations, complete zip archives). If a deliverable is missing, 0 bytes, or merely an untouched boilerplate template, it is an AUTOMATIC FAILURE.
-3. Standard Tool Verification: The container contains standard Linux utilities and Python. Do NOT assume non-standard CLI validator binaries (such as `ifcopenshell.validate`) exist unless verified with `which`. Check files using file size (`ls -lh <path>`), inspection (`head -n 30 <path>`), and python scripts (`python3 -c "..."`).
-4. Re-computation & Code Sanity: Check key numerical calculations and physical constraints against governing codes. Do not create or change any file.
+1. STRICT AUDIT ROLE: You are an AUDITOR, NOT the builder. Do NOT attempt to run scripts or commands to create or fix deliverables. Only inspect and audit the existing deliverables on disk using `read_file`, `ls -lh`, or validation checks (`python3 -c "..."`).
+2. Deliverable Path Verification: You MUST check that every declared deliverable file exists on disk at its EXACT relative path (e.g. `submission/<filename>`, `output/<filename>`). Do NOT check the root directory if the file is specified in a subdirectory.
+3. Content & Modification Check: Verify that the deliverable contains actual populated design entities (e.g. valid IFC buildings/site geometries in STEP format, non-empty calculations, complete zip archives). If a deliverable is missing, 0 bytes, or merely an untouched boilerplate template from the starter repo, it is an AUTOMATIC FAILURE.
+4. Standard Tool Verification: The container contains standard Linux utilities and Python. Do NOT assume non-standard CLI validator binaries exist unless verified with `which`. Check files using file size (`ls -lh <path>`), inspection (`head -n 30 <path>`), and python scripts (`python3 -c "..."`).
 5. Verdict Rule:
-   - NEVER emit PASS unless you have personally verified that non-empty, valid deliverable files exist at the exact expected paths on disk.
+   - NEVER emit PASS unless you have personally verified that non-empty, valid deliverable files exist at the exact expected paths on disk and have been modified with real engineering content.
    - If everything is verified, complete, and code-compliant, reply with the single word: PASS
-   - If ANY deliverable is missing, empty, invalid, or violates a constraint, reply with a numbered list of specific actionable gaps citing the EXACT relative file path and what is needed for the worker to fix."""
+   - If ANY deliverable is missing, empty, untouched from template, invalid, or violates a constraint, reply with a numbered list of specific actionable gaps citing the EXACT relative file path and what is needed for the worker to fix."""
 
 
 def tool(name, description, **params):
@@ -239,7 +240,10 @@ async def run_tool(session, fn):
   """
   name = fn["name"]
   try:
-    args = json.loads(fn["arguments"] or "{}")
+    if isinstance(fn.get("arguments"), dict):
+      args = fn["arguments"]
+    else:
+      args = json.loads(fn.get("arguments") or "{}")
     if not isinstance(args, dict):
       raise TypeError("not a JSON object")
     fn["arguments"] = json.dumps(args, allow_nan=False)
@@ -252,7 +256,18 @@ async def run_tool(session, fn):
   try:
     if name == "bash":
       result = await session.exec(args["command"])
-      return clip(f"exit code {result['exit_code']}\n{result['output']}")
+      out = f"exit code {result['exit_code']}\n{result['output']}"
+      if (
+          result["exit_code"] != 0
+          and "No such file or directory" in result["output"]
+          and re.search(r"python3?\s+([^\s]+\.py)", args.get("command", ""))
+      ):
+        out += (
+            "\n[SYSTEM ADVICE: The python script does not exist on disk. There are no pre-installed"
+            " helper scripts in the container. You must write the script using 'write_file' first,"
+            " or execute python code inline using python3 -c '...']"
+        )
+      return clip(out)
     if name == "read_file":
       return clip(
           (await session.read_file(args["path"])).decode("utf-8", "replace")
@@ -352,6 +367,89 @@ def conversation(system, session, prompt):
   ]
 
 
+def extract_tool_calls_from_text(text: str):
+  """Finds JSON tool calls embedded in markdown code blocks or raw text."""
+  if not text:
+    return []
+  calls = []
+  code_blocks = re.findall(r"```(?:json)?\s*([\s\S]*?)\s*```", text)
+  candidates = [
+      b.strip()
+      for b in code_blocks
+      if b.strip().startswith("{") and b.strip().endswith("}")
+  ]
+  if not candidates:
+    for match in re.finditer(r"\{\s*\"(?:name|function|tool|action)\"", text):
+      start_idx = match.start()
+      brace_count = 0
+      in_str = False
+      escape = False
+      for i in range(start_idx, len(text)):
+        c = text[i]
+        if escape:
+          escape = False
+          continue
+        if c == "\\":
+          escape = True
+          continue
+        if c == '"':
+          in_str = not in_str
+          continue
+        if not in_str:
+          if c == "{":
+            brace_count += 1
+          elif c == "}":
+            brace_count -= 1
+            if brace_count == 0:
+              candidates.append(text[start_idx : i + 1])
+              break
+  for block in candidates:
+    try:
+      parsed = json.loads(block)
+      if isinstance(parsed, dict):
+        tool_name = (
+            parsed.get("name")
+            or parsed.get("function")
+            or parsed.get("tool")
+            or parsed.get("action")
+        )
+        raw_args = (
+            parsed.get("arguments")
+            or parsed.get("action_input")
+            or parsed.get("parameters")
+            or {}
+        )
+        if tool_name in ("bash", "read_file", "write_file"):
+          args_str = (
+              json.dumps(raw_args)
+              if isinstance(raw_args, dict)
+              else str(raw_args)
+          )
+          calls.append({
+              "id": f"call_syn_{secrets.token_hex(4)}",
+              "type": "function",
+              "function": {"name": tool_name, "arguments": args_str},
+          })
+    except Exception:
+      continue
+  return calls
+
+
+async def check_target_status(session, targets):
+  """Checks existence and file size of target deliverables."""
+  status = {}
+  for target in targets:
+    try:
+      res = await session.exec(
+          f"test -f '{target}' && stat -c '%s' '{target}' || echo 'MISSING'"
+      )
+      out = res.get("output", "").strip()
+      status[target] = out
+    except Exception:
+      status[target] = "ERROR"
+  return status
+
+
 async def agent(session, messages, tools, until, final=False, require_tools=False):
   """Runs the tool-calling loop on `messages` until the model answers.
 
@@ -428,7 +526,13 @@ async def agent(session, messages, tools, until, final=False, require_tools=Fals
     # sent back as returned: Gemini refuses a tool call without its thought
     # signature
     turn = message.model_dump(exclude_none=True)
-    if wrap_up or not message.tool_calls:
+    raw_calls = message.tool_calls or []
+    if not raw_calls and not wrap_up and message.content:
+      raw_calls = extract_tool_calls_from_text(message.content)
+      if raw_calls:
+        turn["tool_calls"] = raw_calls
+
+    if wrap_up or not turn.get("tool_calls"):
       turn.pop("tool_calls", None)  # calls made at the wrap-up are not run
       if message.content:
         # a fix round, or the request to go on after a cut-off reply, continues
@@ -526,6 +630,7 @@ async def solve(session):
       if targets
       else ""
   )
+  initial_status = await check_target_status(session, targets)
 
   plan = await agent(
       session,
@@ -540,6 +645,36 @@ async def solve(session):
   summary = await agent(
       session, work, TOOLS, until(CHECK_SHARE), final=True, require_tools=True
   )
+  # Deliverable modification check: ensure Worker actually created or modified declared targets
+  if targets and time_for(until(CHECK_SHARE / 2)):
+    curr = await check_target_status(session, targets)
+    modified = any(
+        curr.get(t) not in ("MISSING", "0", "ERROR")
+        and curr.get(t) != initial_status.get(t)
+        for t in targets
+    )
+    if not modified:
+      work.append({
+          "role": "user",
+          "content": (
+              "CRITICAL ACTION REQUIRED: You completed your turn but have NOT created or modified "
+              f"the required deliverable file(s): {', '.join(targets)} on disk.\n"
+              "The deliverable file is either missing or completely unchanged from the initial template.\n"
+              "You MUST call 'write_file' or execute bash commands to write valid engineering content "
+              "to the deliverable file on disk now before concluding."
+          ),
+      })
+      summary = (
+          await agent(
+              session,
+              work,
+              TOOLS,
+              until(CHECK_SHARE / 2),
+              final=True,
+              require_tools=True,
+          )
+          or summary
+      )
   for _ in range(MAX_FIX_ROUNDS):
     if not time_for(until(CHECK_SHARE / 2)):
       break
@@ -554,11 +689,25 @@ async def solve(session):
         until(CHECK_SHARE / 2),
     )
     await session.log(f"verifier: {verdict[:1000]}")
-    # PASS alone in any letter case (Markdown emphasis and a full stop aside),
-    # or an empty reply, names no gaps
-    if verdict.strip("*_. \r\n\t").upper() in ("", "PASS") or not time_for(
-        WRAP_UP_SEC
-    ):
+    # PASS check with deliverable modification verification
+    if verdict.strip("*_. \r\n\t").upper() in ("", "PASS"):
+      if targets:
+        curr = await check_target_status(session, targets)
+        modified = any(
+            curr.get(t) not in ("MISSING", "0", "ERROR")
+            and curr.get(t) != initial_status.get(t)
+            for t in targets
+        )
+        if not modified:
+          verdict = (
+              f"AUTOMATIC AUDIT FAILURE: The declared target deliverable(s) {', '.join(targets)} "
+              "are missing, 0 bytes, or untouched from the starter template. You must write valid content to disk."
+          )
+        else:
+          break
+      else:
+        break
+    if not time_for(WRAP_UP_SEC):
       break
     work.append({
         "role": "user",
