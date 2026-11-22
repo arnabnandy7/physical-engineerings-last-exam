@@ -1,0 +1,34 @@
+{
+  "format": 1,
+  "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
+  "created": "2026-11-21T18:17:28Z",
+  "harness": {
+    "name": "plan-verify",
+    "model_api": "google-cloud/claude-opus-5-5",
+    "tree": "33f90826869b5910dfaa201def55cccec1fe5c4eb98463d6b83134191f41b0f5",
+    "files": {
+      ".gitignore": "100644 fda3ba9bfb473fac576abce66431240652b74131",
+      "README.md": "100644 9dc6428ddd9d2822d70477e4ff7c8bf466e150f8",
+      "requirements.txt": "100644 13ba6dbe5a230d71da63dd42ee49e86f580056dc",
+      "serve.py": "100644 926eaf50452a74804aed8c5a658bd6ec91f44601",
+      "submission.yaml": "100644 7c501cac7d9517e725bae9471237e9ed5cf1fed0",
+      "taskbridge.py": "100644 26cc3d6cf8dbcaed859731ce9a6881f4ca8bfe40"
+    },
+    "commit": "a94018ae0dd255278fbdcca8d55b8454d5e9b4d4",
+    "dirty": false
+  },
+  "tasks": {
+    "data-center-site-model": {
+      "run": "plan-verify-20261121-180921",
+      "trial": "data-center-site-model__MWvNFFD",
+      "ended": "ok",
+      "reward": 0.0,
+      "tree": "33f90826869b5910dfaa201def55cccec1fe5c4eb98463d6b83134191f41b0f5",
+      "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
+      "files": {},
+      "final_message": "595b6faeaa695f226cd615652bf89a6a2b8d30fa",
+      "deleted": [],
+      "skipped": []
+    }
+  }
+}
