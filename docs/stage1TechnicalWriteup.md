@@ -5,7 +5,7 @@ Autonomous engineering problem-solving requires strict adherence to physical law
 1. A decoupled three-phase lifecycle: **Planner** (read-only document and standard vetting), **Worker** (tool-enforced deliverable authoring), and **Verifier** (independent peer-review audit and remediation loop).
 2. An **Automated Canonical Target Resolution & Auto-Sync Engine** guaranteeing deliverable placement and integrity across complex container directory hierarchies.
 3. A pre-flight deliverable validation protocol enforcing archive format standards (`unzip -t`) and syntax verification (`py_compile`).
-4. A 100% free, zero-cost ($0.00) inference architecture decoupling high-throughput reasoning workloads to GPU hardware, accelerating task execution times by 95% compared to CPU execution.
+4. A 100% free, zero-cost (\$0.00) inference architecture decoupling high-throughput reasoning workloads to GPU hardware, accelerating task execution times by 95% compared to CPU execution.
 
 ---
 
@@ -106,18 +106,18 @@ Engineering tasks in PLE range from rapid structural checks to hour-long computa
 The harness solves this through proportional dynamic time budgeting governed by total available container wall-clock time $T_{\text{total}}$:
 
 $$
-\Delta t_{\text{plan}} = T_{\text{total}} \times \text{PLAN\_SHARE} \quad (\text{PLAN\_SHARE} = 0.20)
+\Delta t_{\text{plan}} = T_{\text{total}} \times r_{\text{plan}} \quad (r_{\text{plan}} = 0.20)
 $$
 
 $$
-\Delta t_{\text{check}} = T_{\text{total}} \times \text{CHECK\_SHARE} \quad (\text{CHECK\_SHARE} = 0.25)
+\Delta t_{\text{check}} = T_{\text{total}} \times r_{\text{check}} \quad (r_{\text{check}} = 0.25)
 $$
 
 $$
 \Delta t_{\text{worker}} = T_{\text{total}} - (\Delta t_{\text{plan}} + \Delta t_{\text{check}})
 $$
 
-* **Phase Transition Enforcement:** Each role is bounded by an `until(share)` threshold. The Planner is limited to the first 20% of the task budget, ensuring 80% remains for physical file authoring and verification.
+* **Phase Transition Enforcement:** Each role is bounded by an `until(share)` threshold. The Planner is limited to the first 20% of the task budget ($r_{\text{plan}} = 0.20$, defined by `PLAN_SHARE`), ensuring 80% remains for physical file authoring and verification ($r_{\text{check}} = 0.25$, defined by `CHECK_SHARE`).
 * **Contextual Time Feedback:** Following every tool invocation, the harness computes remaining step time and injects an active deadline alert directly into the tool response:
   ```text
   [18 minutes left for this step]
@@ -133,12 +133,12 @@ Physical engineering problem-solving generates voluminous stdout streams: recurs
 The harness deploys a two-tier defense strategy:
 
 1. **Immediate Tool Output Clipping (`clip()`):**
-   Every stdout/stderr stream from `bash` and `read_file` is truncated at $\text{RESULT\_CHARS} = 20,000$ characters. If output exceeds this threshold, the harness preserves the head and tail while inserting a truncation disclaimer, protecting immediate turn latency.
+   Every stdout/stderr stream from `bash` and `read_file` is truncated at `RESULT_CHARS = 20,000` characters. If output exceeds this threshold, the harness preserves the head and tail while inserting a truncation disclaimer, protecting immediate turn latency.
 
 2. **Progressive Oldest-Result Pruning (`shorten()`):**
    When an API endpoint raises a context overflow error (`400 Bad Request`), the `recover()` handler activates the `shorten()` procedure:
-   * It scans the conversation history for previous tool execution outputs whose length exceeds $2 \times \text{CUT\_KEEP}$ ($\text{CUT\_KEEP} = 1,000\text{ characters}$).
-   * It prunes the oldest 50% of long tool outputs down to exactly $\text{CUT\_KEEP}$ characters, appending:
+   * It scans the conversation history for previous tool execution outputs whose length exceeds `2 * CUT_KEEP` (`CUT_KEEP = 1,000` characters).
+   * It prunes the oldest 50% of long tool outputs down to exactly `CUT_KEEP` characters, appending:
      ```text
      [... cut to save context; run the tool again if needed]
      ```
@@ -262,7 +262,7 @@ To qualify for Stage 2 Pareto ranking, submissions must satisfy:
 2. A mean evaluation score meeting or exceeding the qualification threshold:
 
 $$
-\text{Score}_{\text{dev}} \ge 0.138 \quad (\sim 4\text{ passing tasks out of } 29)
+S_{\text{dev}} \ge 0.138
 $$
 
 Under the **Plan-Verify** harness, multiple diverse tasks across key engineering disciplines were executed, validated, and exported to the formal artifact repository:
@@ -275,20 +275,20 @@ Under the **Plan-Verify** harness, multiple diverse tasks across key engineering
 | `data-hall-mep-routing-offset` | Mechanical / MEP | `files/app/files/dc_model__hall_seed005_d100__mep_routing/output/solution.py` (361 B) | Clean `py_compile`, geometric offset valid | **`ok (2 files)`** |
 | `roof-deck-design` | Structural / Codes | `output/calculation_report.pdf`, `submission/summary.json` | Stat verification & load checks | **`in progress`** |
 
-By achieving 4 verified, non-refused deliverable artifacts across distinct engineering disciplines, the harness officially reaches the Stage 2 qualification threshold.
+By achieving 4 verified, non-refused deliverable artifacts across distinct engineering disciplines, the harness officially reaches the Stage 2 qualification threshold ($S_{\text{dev}} \ge 0.138$, representing ~4 passing tasks out of 29).
 
 ---
 
-### 4.2 Zero-Cost ($0.00) Infrastructure vs. Proprietary API Economies
-A central design requirement was total financial independence ($0.00 total expense). Commercial agent harnesses evaluating complex 29-task engineering benchmarks routinely incur severe monetary costs, spending between $0.80 and $2.50 per task on frontier proprietary APIs (e.g., GPT-4o, Claude 3.5 Sonnet).
+### 4.2 Zero-Cost (\$0.00) Infrastructure vs. Proprietary API Economies
+A central design requirement was total financial independence (\$0.00 total expense). Commercial agent harnesses evaluating complex 29-task engineering benchmarks routinely incur severe monetary costs, spending between \$0.80 and \$2.50 per task on frontier proprietary APIs (e.g., GPT-4o, Claude 3.5 Sonnet).
 
 | Execution Pipeline | Hardware | Cost / Task | Latency / Task |
 | :--- | :--- | :--- | :--- |
-| Proprietary Frontier APIs | Cloud SaaS | $1.85 - $2.40 | 8 - 14 min |
-| Local CPU Fallback (Ollama) | 8-Core CPU | $0.00 | 315 min (5.3 h) |
-| **Plan-Verify (Detached GPU)** | **Tesla T4 GPU** | **$0.00 (Free)** | **12 - 18 min** |
+| Proprietary Frontier APIs | Cloud SaaS | \$1.85 - \$2.40 | 8 - 14 min |
+| Local CPU Fallback (Ollama) | 8-Core CPU | \$0.00 | 315 min (5.3 h) |
+| **Plan-Verify (Detached GPU)** | **Tesla T4 GPU** | **\$0.00 (Free)** | **12 - 18 min** |
 
-The Plan-Verify harness achieves a 95% latency reduction compared to local CPU execution while preserving a strict $0.00 cost profile by establishing an ephemeral tunneling bridge to a dedicated high-throughput GPU runner:
+The Plan-Verify harness achieves a 95% latency reduction compared to local CPU execution while preserving a strict \$0.00 cost profile by establishing an ephemeral tunneling bridge to a dedicated high-throughput GPU runner:
 * A local LiteLLM proxy routes container egress traffic to an authenticated Ollama runtime serving `qwen2.5:7b` on an accelerated NVIDIA Tesla T4 GPU.
 * The system bypasses paid cloud endpoints entirely, proving that open-weight local intelligence, when augmented with strict role specialization and verification guardrails, can compete directly with expensive proprietary architectures.
 
@@ -300,11 +300,11 @@ The Plan-Verify harness achieves a 95% latency reduction compared to local CPU e
 flowchart LR
     subgraph ParetoCurve ["Figure 2: Score vs. Cost Pareto Frontier"]
         direction TB
-        PV["Plan-Verify (Ours)<br/>Cost: $0.00 | Score: 0.18<br/>Score/$: inf (Pareto Optimal)"]
-        OW["Open-Weights Cloud<br/>Cost: $0.18 | Score: 0.16<br/>Score/$: 0.89"]
-        MINI["GPT-4o Mini<br/>Cost: $0.42 | Score: 0.22<br/>Score/$: 0.52"]
-        CLAUDE["Claude 3.5 Sonnet<br/>Cost: $1.85 | Score: 0.32<br/>Score/$: 0.17"]
-        GPT4["GPT-4o<br/>Cost: $2.40 | Score: 0.34<br/>Score/$: 0.14"]
+        PV["Plan-Verify (Ours)<br/>Cost: 0.00 USD | Score: 0.18<br/>Efficiency: Optimal (Score/Cost -> inf)"]
+        OW["Open-Weights Cloud<br/>Cost: 0.18 USD | Score: 0.16<br/>Efficiency: 0.89 score/USD"]
+        MINI["GPT-4o Mini<br/>Cost: 0.42 USD | Score: 0.22<br/>Efficiency: 0.52 score/USD"]
+        CLAUDE["Claude 3.5 Sonnet<br/>Cost: 1.85 USD | Score: 0.32<br/>Efficiency: 0.17 score/USD"]
+        GPT4["GPT-4o<br/>Cost: 2.40 USD | Score: 0.34<br/>Efficiency: 0.14 score/USD"]
 
         PV -.->|"Cost Gradient"| OW
         OW --> MINI
@@ -315,19 +315,19 @@ flowchart LR
 
 | Harness Pipeline | Cost / Task | Dev-Set Score | Cost-Efficiency ($\eta$) | Pareto Frontier Position |
 | :--- | :---: | :---: | :---: | :--- |
-| **Plan-Verify (Ours)** | **$0.00** | **0.18** | **$\infty$ (Optimal)** | Outer Zero-Cost Boundary Point |
-| Open-Weights Cloud | $0.18 | 0.16 | 0.89 score/\$ | Interior Cloud Baseline |
-| GPT-4o Mini | $0.42 | 0.22 | 0.52 score/\$ | Mid-Tier Frontier |
-| Claude 3.5 Sonnet | $1.85 | 0.32 | 0.17 score/\$ | High-Cost Proprietary |
-| GPT-4o | $2.40 | 0.34 | 0.14 score/\$ | Frontier Upper Bound |
+| **Plan-Verify (Ours)** | **\$0.00** | **0.18** | **$\infty$ (Optimal)** | Outer Zero-Cost Boundary Point |
+| Open-Weights Cloud | \$0.18 | 0.16 | 0.89 score/\$ | Interior Cloud Baseline |
+| GPT-4o Mini | \$0.42 | 0.22 | 0.52 score/\$ | Mid-Tier Frontier |
+| Claude 3.5 Sonnet | \$1.85 | 0.32 | 0.17 score/\$ | High-Cost Proprietary |
+| GPT-4o | \$2.40 | 0.34 | 0.14 score/\$ | Frontier Upper Bound |
 
 On the Pareto efficiency frontier, the cost-efficiency ratio is defined as:
 
 $$
-\eta = \frac{\text{Score}_{\text{dev}}}{\text{Cost}_{\text{USD}}}
+\eta = \frac{S_{\text{dev}}}{C_{\text{task}}}
 $$
 
-For conventional frontier model architectures, $\eta$ ranges between $0.14$ and $0.52\text{ score/\$}$. For Plan-Verify, because the denominator is exactly $0.00, the cost-efficiency ratio asymptotically approaches infinity ($\eta \to \infty$). Plan-Verify establishes the outermost zero-cost boundary point on the benchmark Pareto curve, proving that high deliverable reliability does not require paid API expenditure.
+where $S_{\text{dev}}$ is the benchmark score and $C_{\text{task}}$ is the USD inference cost per task. For conventional frontier model architectures, $\eta$ ranges between $0.14$ and $0.52\text{ score/\$}$. For Plan-Verify, because the denominator is exactly \$0.00, the cost-efficiency ratio asymptotically approaches infinity ($\eta \to \infty$). Plan-Verify establishes the outermost zero-cost boundary point on the benchmark Pareto curve, proving that high deliverable reliability does not require paid API expenditure.
 
 ---
 
@@ -371,7 +371,7 @@ flowchart LR
 The **Plan-Verify** harness demonstrates that professional physical engineering benchmarks require specialized execution environments rather than unconstrained conversational models:
 * **Role-Decoupled Execution:** Isolating the Planner, Worker, and Verifier roles eliminates premature termination and forces thorough problem space exploration.
 * **Deterministic Deliverable Integrity:** Automated target extraction, two-way container auto-sync, and extension-specific pre-flight verification (`unzip -t`, `py_compile`) eradicate catastrophic path and format failures.
-* **Zero-Cost Sustainability:** A detached high-throughput GPU architecture delivers complete benchmark evaluations at $0.00 cost with near-frontier throughput.
+* **Zero-Cost Sustainability:** A detached high-throughput GPU architecture delivers complete benchmark evaluations at \$0.00 cost with near-frontier throughput.
 
 ### 5.2 Limitations & Ongoing Work
 1. **Multi-Hour Numerical Solvers:** Large finite-element and CFD simulations in the test set require longer time allocations; future versions will implement checkpointed container state saving.
