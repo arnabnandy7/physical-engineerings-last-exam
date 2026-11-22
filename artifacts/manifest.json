@@ -1,7 +1,7 @@
 {
   "format": 1,
   "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
-  "created": "2026-11-22T15:41:50Z",
+  "created": "2026-11-22T16:34:30Z",
   "harness": {
     "name": "plan-verify",
     "model_api": "google-cloud/claude-opus-5-5",
@@ -14,8 +14,8 @@
       "submission.yaml": "100644 7c501cac7d9517e725bae9471237e9ed5cf1fed0",
       "taskbridge.py": "100644 26cc3d6cf8dbcaed859731ce9a6881f4ca8bfe40"
     },
-    "commit": "52134cd6d5880b67e8c041ae10679d42180f1bad",
-    "dirty": true
+    "commit": "7b14681451ba9db56e5442e91068593dec79f0ea",
+    "dirty": false
   },
   "tasks": {
     "data-center-site-model": {
@@ -59,16 +59,30 @@
       "skipped": []
     },
     "wind-diaphragm-shear": {
+      "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
       "run": "plan-verify-20261122-153504",
       "trial": "wind-diaphragm-shear__u9TSo2Z",
       "ended": "ok",
       "reward": 0.0,
       "tree": "c5c078d2da6aba51c098ea037ebdf224704c73dad9270244d9ad9f1114b8a0a5",
-      "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
       "files": {
         "filesystem/final_batch4__structural_task5_wind_diaphragm_shear__blind/output/submission.zip": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
       },
       "final_message": "dce246feed96427e1574671472506b7d5b3122ea",
+      "deleted": [],
+      "skipped": []
+    },
+    "data-hall-mep-routing-offset": {
+      "run": "plan-verify-20261122-155225",
+      "trial": "data-hall-mep-routing-offset__iU2RFLp",
+      "ended": "ok",
+      "reward": 0.0,
+      "tree": "c5c078d2da6aba51c098ea037ebdf224704c73dad9270244d9ad9f1114b8a0a5",
+      "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
+      "files": {
+        "app/files/dc_model__hall_seed005_d100__mep_routing/output/solution.py": "c24997cbd2f818fb0c2465000e4ee80dfde00fd9"
+      },
+      "final_message": "fbe1dd95b91bde39db3f59b400d714028da53432",
       "deleted": [],
       "skipped": []
     }
