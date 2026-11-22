@@ -113,9 +113,9 @@ CRITICAL RULES:
 1. NO PRE-EXISTING HELPER SCRIPTS: There are NO scripts like `create_*.py`, `convert_*.py`, `process_*.py` installed in the workspace. NEVER attempt to run a python script unless you verify it exists with `ls` or you just created it using `write_file`. To perform calculations or generate files, either write your own script using `write_file` or execute inline Python with `python3 -c "..."`.
 2. YOU MUST WRITE THE DELIVERABLES: Do not output markdown outlines, future plans, or JSON blocks explaining what to do. You must call tools directly (`write_file` or `bash`) to write the actual deliverables to disk.
 3. Template Preservation: If a deliverable file or skeleton template already exists on disk (e.g. in `submission/` or `output/`), inspect it (`cat`, `head`, or `read_file`) and build upon it. NEVER overwrite a deliverable with an empty file (`""`), a dummy comment, or incorrect format.
-4. Physical Deliverable Creation: Ensure all required deliverable files are written to their EXACT declared paths and file formats (e.g. `.ifc`, `.zip`, `.pdf`, `.py`, `.json`). For IFC files, write valid ISO-10303-21 STEP text matching `docs/example.ifc`. For zip files, use `python3 -m zipfile` or `zip`.
+4. Physical Deliverable Creation: Ensure all required deliverable files are written to their EXACT declared paths and file formats (e.g. `.ifc`, `.zip`, `.pdf`, `.py`, `.json`). If the deliverable path is under a project subfolder (e.g. `/filesystem/<project_folder>/output/submission.zip`), write it to that exact full path or inside `<project_folder>/output/`. For zip files, ALWAYS package them using `python3 -m zipfile -c <path_to_zip> <files...>` or `zip -r <path_to_zip> <files...>`. NEVER use `write_file` to write raw text or JSON to a `.zip` file, as it produces a corrupt archive. For Python scripts (`.py`), do NOT import uninstalled third-party packages (e.g. PIL, cv2, matplotlib) unless verified to be installed; always test run `python3 <script>` to confirm zero import or syntax errors.
 5. Local Oracles & Validation: If an oracle or validation script (e.g. `oracle_client.py`, `tests/`, `validate.py`) exists in the directory, run it (`python3 <script>`) to verify your solution against the constraints before wrapping up.
-6. Self-Inspection: Before wrapping up, run bash commands to verify that deliverable files exist at their exact relative paths, are non-empty, and valid (`ls -lh <path>`, `head -n 20 <path>`).
+6. Self-Inspection & Verification: Before wrapping up, run bash commands to verify that deliverable files exist at their exact declared paths, are non-empty, and valid (`ls -lh <path>`, `head -n 20 <path>`). For zip files, run `unzip -t <path>` to verify archive integrity. For python scripts, run `python3 <script>` to verify clean execution.
 When finished, reply without calling tools with a concise engineering summary of what was delivered, where each file is located, and key numerical findings."""
 
 VERIFIER = """You are a meticulous senior quality assurance and peer-review engineer auditing deliverables in a Linux container. \
@@ -435,14 +435,70 @@ def extract_tool_calls_from_text(text: str):
   return calls
 
 
+def extract_targets(task: str) -> list[str]:
+  """Extracts candidate target deliverable paths from task instructions."""
+  raw = re.findall(
+      r"(?:/(?:app|filesystem|mnt|home|tmp|submission|output)/[\w\-./]+\.(?:ifc|py|json|md|txt|csv|pdf|zip|yaml|yml|sh))"
+      r"|(?:(?:submission|output|app|filesystem)/[\w\-./]+\.(?:ifc|py|json|md|txt|csv|pdf|zip|yaml|yml|sh))",
+      task,
+  )
+  explicit = re.findall(
+      r"(?:write|deliverable[s]?)\s+(?:to|is|are|at)?\s*[`'\"]?([/\w\-./]+\.(?:ifc|py|json|md|txt|csv|pdf|zip|yaml|yml|sh))[`'\"]?",
+      task,
+      re.IGNORECASE,
+  )
+  candidates = set(raw + explicit)
+  normalized = set()
+  for p in candidates:
+    p = p.strip("`'\" \t\r\n")
+    if p.startswith(("app/", "filesystem/", "mnt/", "home/", "tmp/")):
+      p = "/" + p
+    normalized.add(p)
+
+  # Filter out short relative suffixes if a more specific path exists
+  final_targets = set()
+  for p in normalized:
+    if not p.startswith("/") and any(
+        other.endswith("/" + p) for other in normalized if other != p
+    ):
+      continue
+    final_targets.add(p)
+  return sorted(final_targets)
+
+
 async def check_target_status(session, targets):
-  """Checks existence and file size of target deliverables."""
+  """Checks existence, file size, and validity of target deliverables, auto-syncing if found elsewhere."""
   status = {}
   for target in targets:
     try:
-      res = await session.exec(
-          f"test -f '{target}' && stat -c '%s' '{target}' || echo 'MISSING'"
+      basename = os.path.basename(target)
+      # Auto-sync: if target is missing, check if it was created elsewhere in the container
+      sync_cmd = (
+          f"if [ ! -f '{target}' ]; then "
+          f"  found=$(find /filesystem /app . -name '{basename}' -type f -not -path '*/templates/*' 2>/dev/null | head -n 1); "
+          f"  if [ -n \"$found\" ] && [ -f \"$found\" ]; then "
+          f"    mkdir -p \"$(dirname '{target}')\" && cp \"$found\" '{target}'; "
+          f"  fi; "
+          f"fi; "
+          f"if [ -f '{target}' ]; then "
+          f"  rel_target='{target}'; "
+          f"  if [[ \"$rel_target\" == /filesystem/* ]]; then "
+          f"    sub_rel=\"${{rel_target#/filesystem/}}\"; "
+          f"    mkdir -p \"$(dirname \"$sub_rel\")\" 2>/dev/null && cp -u '{target}' \"$sub_rel\" 2>/dev/null || true; "
+          f"  fi; "
+          f"fi"
       )
+      await session.exec(sync_cmd)
+
+      # Validity check based on file extension
+      if target.endswith(".zip"):
+        cmd = f"test -f '{target}' && unzip -t '{target}' >/dev/null 2>&1 && stat -c '%s' '{target}' || echo 'MISSING_OR_CORRUPT_ZIP'"
+      elif target.endswith(".py"):
+        cmd = f"test -f '{target}' && python3 -m py_compile '{target}' >/dev/null 2>&1 && stat -c '%s' '{target}' || echo 'MISSING_OR_SYNTAX_ERROR'"
+      else:
+        cmd = f"test -f '{target}' && stat -c '%s' '{target}' || echo 'MISSING'"
+
+      res = await session.exec(cmd)
       out = res.get("output", "").strip()
       status[target] = out
     except Exception:
@@ -616,14 +672,7 @@ async def solve(session):
 
   task = session.instruction
   # Identify declared target deliverables from task instructions
-  targets = sorted(
-      set(
-          re.findall(
-              r"(?:(?:submission|output|app|filesystem)/[\w\-./]+\.(?:ifc|py|json|md|txt|csv|pdf|zip|yaml|yml|sh))",
-              task,
-          )
-      )
-  )
+  targets = extract_targets(task)
   target_hint = (
       f"\n\n## Declared Target Deliverables\n"
       + "\n".join(f"- `{t}`" for t in targets)
@@ -646,10 +695,11 @@ async def solve(session):
       session, work, TOOLS, until(CHECK_SHARE), final=True, require_tools=True
   )
   # Deliverable modification check: ensure Worker actually created or modified declared targets
+  invalid_statuses = ("MISSING", "0", "ERROR", "MISSING_OR_CORRUPT_ZIP", "MISSING_OR_SYNTAX_ERROR")
   if targets and time_for(until(CHECK_SHARE / 2)):
     curr = await check_target_status(session, targets)
     modified = any(
-        curr.get(t) not in ("MISSING", "0", "ERROR")
+        curr.get(t) not in invalid_statuses
         and curr.get(t) != initial_status.get(t)
         for t in targets
     )
@@ -694,14 +744,14 @@ async def solve(session):
       if targets:
         curr = await check_target_status(session, targets)
         modified = any(
-            curr.get(t) not in ("MISSING", "0", "ERROR")
+            curr.get(t) not in invalid_statuses
             and curr.get(t) != initial_status.get(t)
             for t in targets
         )
         if not modified:
           verdict = (
               f"AUTOMATIC AUDIT FAILURE: The declared target deliverable(s) {', '.join(targets)} "
-              "are missing, 0 bytes, or untouched from the starter template. You must write valid content to disk."
+              "are missing, 0 bytes, corrupted, or untouched from the starter template. You must write valid content to disk."
           )
         else:
           break
@@ -728,6 +778,8 @@ async def solve(session):
         )
         or summary
     )
+  if targets:
+    await check_target_status(session, targets)
   return summary or session.final_message
 
 
