@@ -109,23 +109,26 @@ WORKER = """You are an expert licensed professional engineer carrying out a task
 A plan for the task is provided below; follow it, and adapt if directory inspection reveals specific project structures.
 
 ENGINEERING WORKFLOW:
-1. Dynamic Discovery: Run `ls -la` to confirm file paths before executing logic.
-2. Code-Based Calculation: Compute all engineering equations (bearing capacity, settlement, noise propagation, geometric clearances) using Python scripts (`python3 -c "..."` or writing script files). Never calculate complex engineering numbers by hand or in text.
-3. Physical Deliverable Creation: Ensure all required deliverable files are written to their EXACT declared paths and file formats (e.g. `.ifc`, `.zip`, `.pdf`, `.py`, `.json`). If a template or skeleton deliverable exists, verify that your changes populate actual entities and data.
-4. Self-Inspection: Before wrapping up, run bash commands to check that the deliverable files exist on disk, are non-empty, and valid (`ls -lh <path>`, `head -n 20 <path>`, or running a Python syntax/validation check).
+1. Dynamic Discovery: Run `ls -la` to confirm file paths before executing logic. Inspect any provided `docs/` or example files (such as `docs/example.ifc` or similar templates) to understand required schemas and syntax.
+2. Template Preservation: If a deliverable file or skeleton template already exists on disk (e.g. in `submission/` or `output/`), inspect it (`cat` or `head`) and build upon it. NEVER overwrite a deliverable with an empty file (`""`), a dummy comment, or incorrect format (e.g. do not write JSON to an IFC/STEP file).
+3. Code-Based Calculation: Compute all engineering equations (bearing capacity, settlement, noise propagation, geometric clearances) using Python scripts (`python3 -c "..."` or writing script files). Never calculate complex engineering numbers by hand or in text.
+4. Physical Deliverable Creation: Ensure all required deliverable files are written to their EXACT declared paths and file formats (e.g. `.ifc`, `.zip`, `.pdf`, `.py`, `.json`). For IFC files, write valid ISO-10303-21 STEP text matching `docs/example.ifc`. For zip files, use `python3 -m zipfile` or `zip`.
+5. ACTION OVER TALK: When asked to create or fix deliverables, you MUST call tools (`write_file` or `bash`). Never reply with text explaining what you plan to do or agreeing with feedback without executing the tool calls to update the files on disk first.
+6. Self-Inspection: Before wrapping up, run bash commands to check that the deliverable files exist on disk at their exact paths, are non-empty, and valid (`ls -lh <path>`, `head -n 20 <path>`, or running a Python syntax/validation check).
 When finished, reply without calling tools with a concise engineering summary of what was delivered, where each file is located, and key numerical findings."""
 
 VERIFIER = """You are a meticulous senior quality assurance and peer-review engineer auditing deliverables in a Linux container. \
 You receive the task instructions, the engineering plan, and the worker's summary.
 
 AUDIT PROTOCOL:
-1. Deliverable Verification: You MUST check that every declared deliverable file exists on disk and is non-empty (`bash` with `ls -lh <path>` or `read_file`).
-2. Content & Entity Check: Verify that the deliverable contains actual populated design entities (e.g. valid IFC buildings/site geometries, non-empty calculations, complete zip archives). If a deliverable is missing, 0 bytes, or merely an untouched boilerplate template, it is an AUTOMATIC FAILURE.
-3. Re-computation & Code Sanity: Check key numerical calculations and physical constraints against governing codes. Do not create or change any file.
-4. Verdict Rule:
+1. Deliverable Path Verification: You MUST check that every declared deliverable file exists on disk at its EXACT relative path (e.g. `submission/<filename>`, `output/<filename>`, or discover via `find . -type f`). Do NOT check the root directory if the file is specified in a subdirectory.
+2. Content & Entity Check: Verify that the deliverable contains actual populated design entities (e.g. valid IFC buildings/site geometries in STEP format, non-empty calculations, complete zip archives). If a deliverable is missing, 0 bytes, or merely an untouched boilerplate template, it is an AUTOMATIC FAILURE.
+3. Standard Tool Verification: The container contains standard Linux utilities and Python. Do NOT assume non-standard CLI validator binaries (such as `ifcopenshell.validate`) exist unless verified with `which`. Check files using file size (`ls -lh <path>`), inspection (`head -n 30 <path>`), and python scripts (`python3 -c "..."`).
+4. Re-computation & Code Sanity: Check key numerical calculations and physical constraints against governing codes. Do not create or change any file.
+5. Verdict Rule:
    - NEVER emit PASS unless you have personally verified that non-empty, valid deliverable files exist at the exact expected paths on disk.
    - If everything is verified, complete, and code-compliant, reply with the single word: PASS
-   - If ANY deliverable is missing, empty, invalid, or violates a constraint, reply with a numbered list of specific actionable gaps for the worker to fix."""
+   - If ANY deliverable is missing, empty, invalid, or violates a constraint, reply with a numbered list of specific actionable gaps citing the EXACT relative file path and what is needed for the worker to fix."""
 
 
 def tool(name, description, **params):
@@ -349,12 +352,14 @@ def conversation(system, session, prompt):
   ]
 
 
-async def agent(session, messages, tools, until, final=False):
+async def agent(session, messages, tools, until, final=False, require_tools=False):
   """Runs the tool-calling loop on `messages` until the model answers.
 
   Prompts the model to wrap up immediately once fewer than `until` seconds
   remain on the task clock. When `final` is `True`, updates
   `session.final_message` with each non-empty response.
+  When `require_tools` is `True`, prevents premature text returns if no tools
+  have been executed yet.
 
   Args:
     session: Active `taskbridge.Session` for the task.
@@ -363,12 +368,13 @@ async def agent(session, messages, tools, until, final=False):
     until: Remaining task time threshold (in seconds) at which this step wraps
       up.
     final: Whether to record responses in `session.final_message`.
+    require_tools: Whether the agent must call tools before replying with text.
 
   Returns:
     The final text response produced by this agent step.
   """
   # head: the start of an answer cut off at the output limit
-  nudges, head, waits = 0, "", iter(RETRY_WAITS)
+  nudges, head, waits, tools_used = 0, "", iter(RETRY_WAITS), 0
   while True:
     left = session.time_left()  # None when the task has no time limit
     wrap_up = left is not None and left < until
@@ -428,6 +434,17 @@ async def agent(session, messages, tools, until, final=False):
         # a fix round, or the request to go on after a cut-off reply, continues
         # from this answer
         messages.append(turn)
+      if require_tools and not tools_used and not wrap_up and nudges < MAX_NUDGES:
+        nudges, head = nudges + 1, text
+        messages.append({
+            "role": "user",
+            "content": (
+                "ACTION REQUIRED: You responded with text without calling any tools. "
+                "You must call the appropriate tool ('write_file' or 'bash') to create, "
+                "populate, or modify the required deliverable files on disk now."
+            ),
+        })
+        continue
       if wrap_up or (message.content and not cut) or nudges == MAX_NUDGES:
         return text
       nudges, head = nudges + 1, text
@@ -440,6 +457,7 @@ async def agent(session, messages, tools, until, final=False):
           ),
       })
       continue
+    tools_used += len(turn["tool_calls"])
     nudges, head = 0, ""
     messages.append(turn)
     for call in turn["tool_calls"]:
@@ -493,20 +511,40 @@ async def solve(session):
     return left is None or left - wrap_up >= MIN_STEP_SEC
 
   task = session.instruction
+  # Identify declared target deliverables from task instructions
+  targets = sorted(
+      set(
+          re.findall(
+              r"(?:(?:submission|output|app|filesystem)/[\w\-./]+\.(?:ifc|py|json|md|txt|csv|pdf|zip|yaml|yml|sh))",
+              task,
+          )
+      )
+  )
+  target_hint = (
+      f"\n\n## Declared Target Deliverables\n"
+      + "\n".join(f"- `{t}`" for t in targets)
+      if targets
+      else ""
+  )
+
   plan = await agent(
       session,
-      conversation(PLANNER, session, task),
+      conversation(PLANNER, session, f"{task}{target_hint}"),
       READ_ONLY,
       until(1 - PLAN_SHARE),
   )
   await session.log(f"plan: {plan[:1000]}")
-  work = conversation(WORKER, session, f"{task}\n\n## Plan\n{plan}")
-  summary = await agent(session, work, TOOLS, until(CHECK_SHARE), final=True)
+  work = conversation(
+      WORKER, session, f"{task}{target_hint}\n\n## Plan\n{plan}"
+  )
+  summary = await agent(
+      session, work, TOOLS, until(CHECK_SHARE), final=True, require_tools=True
+  )
   for _ in range(MAX_FIX_ROUNDS):
     if not time_for(until(CHECK_SHARE / 2)):
       break
     review = (
-        f"## Task\n{task}\n\n## Plan\n{plan}\n\n## The engineer's"
+        f"## Task\n{task}{target_hint}\n\n## Plan\n{plan}\n\n## The engineer's"
         f" summary\n{summary}"
     )
     verdict = await agent(
@@ -525,13 +563,21 @@ async def solve(session):
     work.append({
         "role": "user",
         "content": (
-            "A reviewer checked your files and found these"
-            f" gaps:\n{verdict}\n\nFix them, then reply with your updated"
-            " summary."
+            "CRITICAL ACTION REQUIRED - A reviewer checked your deliverables and"
+            f" found these gaps:\n{verdict}\n\n"
+            "DO NOT reply with conversational text or empty agreements.\n"
+            "DO NOT overwrite deliverables with empty strings or stub placeholders.\n"
+            "You MUST invoke tools (`write_file` or `bash`) to fix these gaps and"
+            " create/modify the required deliverables on disk now with valid engineering content."
+            " Only after the deliverables on disk are fixed and verified, reply with"
+            " your updated summary."
         ),
     })
     summary = (
-        await agent(session, work, TOOLS, WRAP_UP_SEC, final=True) or summary
+        await agent(
+            session, work, TOOLS, WRAP_UP_SEC, final=True, require_tools=True
+        )
+        or summary
     )
   return summary or session.final_message
 
