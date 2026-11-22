@@ -17,9 +17,9 @@ Rather than relying on a monolithic conversational loop, the harness enforces st
 ```mermaid
 flowchart TD
     subgraph Harness ["Plan-Verify Execution Harness"]
-        TaskIn["Task Instruction & Standards"] --> Planner["1. Planner Role\n(Read-Only: bash, read_file)"]
-        Planner -->|"Structured Engineering Plan & Constraints"| Worker["2. Worker Role\n(Full Tools: bash, write_file, read_file)"]
-        Worker -->|"Deliverable Files & Engineering Summary"| Verifier["3. Verifier Role\n(Independent Audit: read_only)"]
+        TaskIn["Task Instruction & Standards"] --> Planner["1. Planner Role<br/>(Read-Only: bash, read_file)"]
+        Planner -->|"Structured Engineering Plan & Constraints"| Worker["2. Worker Role<br/>(Full Tools: bash, write_file, read_file)"]
+        Worker -->|"Deliverable Files & Engineering Summary"| Verifier["3. Verifier Role<br/>(Independent Audit: read_only)"]
         Verifier -->|"Audit Finding / Specific Gaps"| Worker
         Verifier -->|"PASS & Validated Deliverables"| Output["Export Deliverables to artifacts/"]
     end
@@ -33,7 +33,7 @@ flowchart TD
     subgraph ValidationEngine ["Deliverable Integrity & Auto-Sync"]
         Worker --> TargetExtract["Canonical Target Extraction"]
         TargetExtract --> AutoSync["Auto-Sync & Mirroring"]
-        AutoSync --> Integrity["Pre-flight Verification\n(unzip -t, py_compile)"]
+        AutoSync --> Integrity["Pre-flight Verification<br/>(unzip -t, py_compile)"]
         Integrity --> Verifier
     end
 ```
@@ -67,11 +67,11 @@ The harness executes outside the untrusted task container as a decoupled WebSock
 ## 2. Modeling Choices, Prompting & Reasoning Strategies
 
 ### 2.1 Native Function Calling vs. Robust Synthetic Extraction
-A critical vulnerability of agent harnesses deployed across diverse foundation models is the brittle handling of function calling. While proprietary frontier models provide native JSON schema tool calling, lightweight and open-weight models (e.g., Qwen 2.5 7B, Llama 3) frequently emit function calls as embedded Markdown blocks (e.g., ````json ... ```` or ````bash ... ````) or informal text schemas. In rigid harnesses, this discrepancy causes immediate parse errors and unhandled execution stalls.
+A critical vulnerability of agent harnesses deployed across diverse foundation models is the brittle handling of function calling. While proprietary frontier models provide native JSON schema tool calling, lightweight and open-weight models (e.g., Qwen 2.5 7B, Llama 3) frequently emit function calls as embedded Markdown blocks or informal text schemas. In rigid harnesses, this discrepancy causes immediate parse errors and unhandled execution stalls.
 
 To eliminate this vulnerability, the harness implements a dual-path tool execution engine via `extract_tool_calls_from_text`:
 
-```
+```text
 Model Output
      │
      ├──> Native Tool Calls Present? ──── YES ───> Execute via run_tool()
@@ -79,7 +79,7 @@ Model Output
      └──> NO (Free-form Text / Code Blocks)
                │
                ▼
-     Extract Markdown Code Blocks (```json ... ```)
+     Extract JSON Blocks (e.g. {"name": "bash", "arguments": ...})
                │
           Found JSON? ─── YES ───> Parse & Convert to OpenAI Tool Call
                │
@@ -105,24 +105,30 @@ Engineering tasks in PLE range from rapid structural checks to hour-long computa
 
 The harness solves this through proportional dynamic time budgeting governed by total available container wall-clock time $T_{\text{total}}$:
 
-$$\Delta t_{\text{plan}} = T_{\text{total}} \times \text{PLAN\_SHARE} \quad (\text{PLAN\_SHARE} = 0.20)$$
+$$
+\Delta t_{\text{plan}} = T_{\text{total}} \times \text{PLAN\_SHARE} \quad (\text{PLAN\_SHARE} = 0.20)
+$$
 
-$$\Delta t_{\text{check}} = T_{\text{total}} \times \text{CHECK\_SHARE} \quad (\text{CHECK\_SHARE} = 0.25)$$
+$$
+\Delta t_{\text{check}} = T_{\text{total}} \times \text{CHECK\_SHARE} \quad (\text{CHECK\_SHARE} = 0.25)
+$$
 
-$$\Delta t_{\text{worker}} = T_{\text{total}} - (\Delta t_{\text{plan}} + \Delta t_{\text{check}})$$
+$$
+\Delta t_{\text{worker}} = T_{\text{total}} - (\Delta t_{\text{plan}} + \Delta t_{\text{check}})
+$$
 
 * **Phase Transition Enforcement:** Each role is bounded by an `until(share)` threshold. The Planner is limited to the first 20% of the task budget, ensuring 80% remains for physical file authoring and verification.
 * **Contextual Time Feedback:** Following every tool invocation, the harness computes remaining step time and injects an active deadline alert directly into the tool response:
-  ```
+  ```text
   [18 minutes left for this step]
   ```
   This continuous feedback anchors the model's internal reasoning, preventing multi-turn looping.
-* **Graceful Wrap-Up Deadline (`WRAP_UP_SEC = 300`):** When remaining task time drops below 300 seconds ($5\text{ minutes}$), the harness sets `tool_choice="none"`, overrides the conversational loop, and injects a mandatory wrap-up instruction (`WRAP_UP`). This gives the model a dedicated, uninterrupted turn to compile its final engineering summary and verify that deliverables are persisted to disk.
+* **Graceful Wrap-Up Deadline (`WRAP_UP_SEC = 300`):** When remaining task time drops below 300 seconds (5 minutes), the harness sets `tool_choice="none"`, overrides the conversational loop, and injects a mandatory wrap-up instruction (`WRAP_UP`). This gives the model a dedicated, uninterrupted turn to compile its final engineering summary and verify that deliverables are persisted to disk.
 
 ---
 
 ### 2.3 Context Window Management & Ephemeral Token Pruning
-Physical engineering problem-solving generates voluminous stdout streams: recursive directory trees, structural analysis matrices, Python stack traces, and verbose CAD compilation logs. Unchecked, these outputs exceed context limits ($32\text{k} - 128\text{k}\text{ tokens}$) and trigger `400 context_overflow` failures.
+Physical engineering problem-solving generates voluminous stdout streams: recursive directory trees, structural analysis matrices, Python stack traces, and verbose CAD compilation logs. Unchecked, these outputs exceed context limits (32k - 128k tokens) and trigger `400 context_overflow` failures.
 
 The harness deploys a two-tier defense strategy:
 
@@ -132,8 +138,8 @@ The harness deploys a two-tier defense strategy:
 2. **Progressive Oldest-Result Pruning (`shorten()`):**
    When an API endpoint raises a context overflow error (`400 Bad Request`), the `recover()` handler activates the `shorten()` procedure:
    * It scans the conversation history for previous tool execution outputs whose length exceeds $2 \times \text{CUT\_KEEP}$ ($\text{CUT\_KEEP} = 1,000\text{ characters}$).
-   * It prunes the oldest $50\%$ of long tool outputs down to exactly $\text{CUT\_KEEP}$ characters, appending:
-     ```
+   * It prunes the oldest 50% of long tool outputs down to exactly $\text{CUT\_KEEP}$ characters, appending:
+     ```text
      [... cut to save context; run the tool again if needed]
      ```
    * Crucially, the system prompt, initial problem instructions, active plan, and reasoning/thinking signatures are preserved intact. By compressing historical execution logs while preserving cognitive continuity, the harness can sustain conversations across hundreds of iterations without loss of task context.
@@ -228,13 +234,13 @@ sequenceDiagram
     W->>E: Delivers Artifacts on Disk
     E->>E: Run Auto-Sync & Pre-flight Checks (unzip -t, py_compile)
     alt Integrity Failure or Missing Deliverable
-        E->>W: Force Nudge ("Deliverable missing or corrupt on disk")
+        E->>W: Force Nudge: Deliverable missing or corrupt on disk
         W->>E: Remediate File & Re-export
     end
     E->>V: Pass Validated Workspace & Task Instructions
     V->>V: Inspect Deliverables & Numerical Findings
     alt Gaps or Constraint Violations Found
-        V->>W: Specific Actionable Audit Gaps (Round 1..MAX_FIX_ROUNDS)
+        V->>W: Specific Actionable Audit Gaps (Rounds 1 to 2)
         W->>W: Execute Corrective Calculations & Re-write Files
         W->>V: Submit Updated Deliverables
     else Meets All Criteria
@@ -255,7 +261,9 @@ To qualify for Stage 2 Pareto ranking, submissions must satisfy:
 1. Valid generation of declared deliverable files satisfying `python -m kit artifacts <harness>` and `python -m kit check`.
 2. A mean evaluation score meeting or exceeding the qualification threshold:
 
-$$\text{Score}_{\text{dev}} \ge 0.138 \quad (\sim 4\text{ passing tasks out of } 29)$$
+$$
+\text{Score}_{\text{dev}} \ge 0.138 \quad (\sim 4\text{ passing tasks out of } 29)
+$$
 
 Under the **Plan-Verify** harness, multiple diverse tasks across key engineering disciplines were executed, validated, and exported to the formal artifact repository:
 
@@ -274,16 +282,11 @@ By achieving 4 verified, non-refused deliverable artifacts across distinct engin
 ### 4.2 Zero-Cost ($0.00) Infrastructure vs. Proprietary API Economies
 A central design requirement was total financial independence ($0.00 total expense). Commercial agent harnesses evaluating complex 29-task engineering benchmarks routinely incur severe monetary costs, spending between $0.80 and $2.50 per task on frontier proprietary APIs (e.g., GPT-4o, Claude 3.5 Sonnet).
 
-```
-Comparative Task Cost & Execution Latency:
-┌───────────────────────────────┬──────────────┬───────────────┬─────────────────┐
-│ Execution Pipeline            │ Hardware     │ Cost / Task   │ Latency / Task  │
-├───────────────────────────────┼──────────────┼───────────────┼─────────────────┤
-│ Proprietary Frontier APIs     │ Cloud SaaS   │ $1.85 - $2.40 │ 8 - 14 min      │
-│ Local CPU Fallback (Ollama)   │ 8-Core CPU   │ $0.00         │ 315 min (5.3 h) │
-│ Plan-Verify (Detached GPU)    │ Tesla T4 GPU │ $0.00 (Free)  │ 12 - 18 min     │
-└───────────────────────────────┴──────────────┴───────────────┴─────────────────┘
-```
+| Execution Pipeline | Hardware | Cost / Task | Latency / Task |
+| :--- | :--- | :--- | :--- |
+| Proprietary Frontier APIs | Cloud SaaS | $1.85 - $2.40 | 8 - 14 min |
+| Local CPU Fallback (Ollama) | 8-Core CPU | $0.00 | 315 min (5.3 h) |
+| **Plan-Verify (Detached GPU)** | **Tesla T4 GPU** | **$0.00 (Free)** | **12 - 18 min** |
 
 The Plan-Verify harness achieves a 95% latency reduction compared to local CPU execution while preserving a strict $0.00 cost profile by establishing an ephemeral tunneling bridge to a dedicated high-throughput GPU runner:
 * A local LiteLLM proxy routes container egress traffic to an authenticated Ollama runtime serving `qwen2.5:7b` on an accelerated NVIDIA Tesla T4 GPU.
@@ -294,18 +297,37 @@ The Plan-Verify harness achieves a 95% latency reduction compared to local CPU e
 ### 4.3 Figure 2: Score-vs-Cost Pareto Frontier Analysis
 
 ```mermaid
-xychart-beta
-    title "Figure 2: Benchmark Score vs. Inference Cost ($)"
-    x-axis ["Plan-Verify ($0.00)", "Open-Weights Cloud ($0.18)", "GPT-4o Mini ($0.42)", "Claude Sonnet 3.5 ($1.85)", "GPT-4o ($2.40)"]
-    y-axis "Dev-Set Benchmark Score" 0.0 --> 0.4
-    bar [0.18, 0.16, 0.22, 0.32, 0.34]
+flowchart LR
+    subgraph ParetoCurve ["Figure 2: Score vs. Cost Pareto Frontier"]
+        direction TB
+        PV["Plan-Verify (Ours)<br/>Cost: $0.00 | Score: 0.18<br/>Score/$: inf (Pareto Optimal)"]
+        OW["Open-Weights Cloud<br/>Cost: $0.18 | Score: 0.16<br/>Score/$: 0.89"]
+        MINI["GPT-4o Mini<br/>Cost: $0.42 | Score: 0.22<br/>Score/$: 0.52"]
+        CLAUDE["Claude 3.5 Sonnet<br/>Cost: $1.85 | Score: 0.32<br/>Score/$: 0.17"]
+        GPT4["GPT-4o<br/>Cost: $2.40 | Score: 0.34<br/>Score/$: 0.14"]
+
+        PV -.->|"Cost Gradient"| OW
+        OW --> MINI
+        MINI --> CLAUDE
+        CLAUDE --> GPT4
+    end
 ```
+
+| Harness Pipeline | Cost / Task | Dev-Set Score | Cost-Efficiency ($\eta$) | Pareto Frontier Position |
+| :--- | :---: | :---: | :---: | :--- |
+| **Plan-Verify (Ours)** | **$0.00** | **0.18** | **$\infty$ (Optimal)** | Outer Zero-Cost Boundary Point |
+| Open-Weights Cloud | $0.18 | 0.16 | 0.89 score/\$ | Interior Cloud Baseline |
+| GPT-4o Mini | $0.42 | 0.22 | 0.52 score/\$ | Mid-Tier Frontier |
+| Claude 3.5 Sonnet | $1.85 | 0.32 | 0.17 score/\$ | High-Cost Proprietary |
+| GPT-4o | $2.40 | 0.34 | 0.14 score/\$ | Frontier Upper Bound |
 
 On the Pareto efficiency frontier, the cost-efficiency ratio is defined as:
 
-$$\eta = \frac{\text{Score}_{\text{dev}}}{\text{Cost}_{\text{USD}}}$$
+$$
+\eta = \frac{\text{Score}_{\text{dev}}}{\text{Cost}_{\text{USD}}}
+$$
 
-For conventional frontier model architectures, $\eta$ ranges between $0.14$ and $0.52\text{ score/\$}$. For Plan-Verify, because the denominator is exactly $\$0.00$, the cost-efficiency ratio asymptotically approaches infinity ($\eta \to \infty$). Plan-Verify establishes the outermost zero-cost boundary point on the benchmark Pareto curve, proving that high deliverable reliability does not require paid API expenditure.
+For conventional frontier model architectures, $\eta$ ranges between $0.14$ and $0.52\text{ score/\$}$. For Plan-Verify, because the denominator is exactly $0.00, the cost-efficiency ratio asymptotically approaches infinity ($\eta \to \infty$). Plan-Verify establishes the outermost zero-cost boundary point on the benchmark Pareto curve, proving that high deliverable reliability does not require paid API expenditure.
 
 ---
 
@@ -316,16 +338,16 @@ Prior to the implementation of the Plan-Verify Deliverable Verification & Auto-S
 flowchart LR
     subgraph BaselineFailures ["Pre-Improvement Failure Distribution"]
         direction TB
-        F1["Structural (34%)\n• 0-Byte Zip Archive Trap\n• Formula Transposition\n• Missing Intermediate Calcs"]
-        F2["Mechanical / MEP (28%)\n• Uninstalled Module Imports\n• Infinite Rerouting Loops\n• Syntax Indentation Errors"]
-        F3["Civil & BIM (24%)\n• Subfolder Path Misalignment\n• Template Overwrite with Empty String\n• IFC Syntax Violations"]
-        F4["Rubric / Evaluator (14%)\n• Edge Proxy 100s HTTP 524 Timeout\n• Empty final_message.md"]
+        F1["Structural (34%)<br/>- 0-Byte Zip Archive Trap<br/>- Formula Transposition<br/>- Missing Intermediate Calcs"]
+        F2["Mechanical / MEP (28%)<br/>- Uninstalled Module Imports<br/>- Infinite Rerouting Loops<br/>- Syntax Indentation Errors"]
+        F3["Civil & BIM (24%)<br/>- Subfolder Path Misalignment<br/>- Template Overwrite with Empty String<br/>- IFC Syntax Violations"]
+        F4["Rubric / Evaluator (14%)<br/>- Edge Proxy 100s HTTP 524 Timeout<br/>- Empty final_message.md"]
     end
 
     subgraph SolutionsEngine ["Plan-Verify Remediation Mechanisms"]
         direction TB
-        S1["Pre-flight `unzip -t` Check & python3 -m zipfile Enforcement"]
-        S2["`python3 -m py_compile` Pre-flight & Standard Library Fallback"]
+        S1["Pre-flight unzip -t Check & python3 -m zipfile Enforcement"]
+        S2["Pre-flight py_compile Check & Standard Library Fallback"]
         S3["Automated Target Extraction & Container Auto-Sync Engine"]
         S4["Layer-4 TCP Tunneling (Bore) & Exponential Backoff Retries"]
     end
@@ -357,7 +379,7 @@ The **Plan-Verify** harness demonstrates that professional physical engineering 
 
 ### 5.3 Reproducibility & Open Source
 All code, harness configs, and evaluation logs are maintained in the GitHub repository:
-`https://github.com/arnabnandy7/physical-engineerings-last-exam` on branch `feature/harnessImprovements` (Pull Request #2). Complete evaluation artifacts are permanently packaged in [`harness/artifacts/`](file:///c:/Users/Arnab/Documents/Workspace/physical-engineerings-last-exam/harness/artifacts), fully reproducible via the competition toolkit:
+`https://github.com/arnabnandy7/physical-engineerings-last-exam` on branch `feature/harnessImprovements` (Pull Request #2). Complete evaluation artifacts are permanently packaged in [harness/artifacts/](../artifacts/), fully reproducible via the competition toolkit:
 
 ```bash
 python -m kit check
