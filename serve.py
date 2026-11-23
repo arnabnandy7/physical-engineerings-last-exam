@@ -273,6 +273,13 @@ async def run_tool(session, fn):
           (await session.read_file(args["path"])).decode("utf-8", "replace")
       )
     if name == "write_file":
+      if args.get("path", "").endswith(".zip"):
+        return (
+            f"error: cannot use 'write_file' on a .zip file ({args.get('path')}). "
+            "write_file produces a raw text file which corrupts the binary zip archive. "
+            "You MUST use the bash tool with 'python3 -m zipfile -c <path_to_zip> <files...>' or "
+            "'zip -r <path_to_zip> <files...>' to package deliverables into a valid zip archive."
+        )
       return (
           f"wrote {await session.write_file(args['path'], args['content'])}"
           f" bytes to {args['path']}"
