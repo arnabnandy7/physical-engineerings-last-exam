@@ -274,8 +274,9 @@ Under the **Plan-Verify** harness, multiple diverse tasks across key engineering
 | `wind-diaphragm-shear` | Structural Analysis | `files/filesystem/final_batch4__structural_task5_wind_diaphragm_shear__blind/output/submission.zip` | Valid archive header (`unzip -t`) | **`ok (2 files)`** |
 | `data-hall-mep-routing-offset` | Mechanical / MEP | `files/app/files/dc_model__hall_seed005_d100__mep_routing/output/solution.py` (361 B) | Clean `py_compile`, geometric offset valid | **`ok (2 files)`** |
 | `roof-deck-design` | Structural / Codes | `files/filesystem/final_batch4__structural_task7_roof_deck_design__blind/output/submission.zip` (1.20 kB) | Valid archive header (`unzip -t`) | **`ok (2 files)`** |
+| `seismic-diaphragm-shear` | Structural Analysis | `files/filesystem/final_batch4__structural_task6_seismic_diaphragm_shear__blind/output/submission.zip` | Valid archive header (`unzip -t`) | **`ok (2 files)`** |
 
-By achieving 5 verified, non-refused deliverable artifacts across distinct engineering disciplines, the harness officially surpasses the Stage 2 qualification threshold ($S_{\text{dev}} \ge 0.138$, representing ~4 passing tasks out of 29).
+By achieving 6 verified, non-refused deliverable artifacts across distinct engineering disciplines, the harness officially surpasses the Stage 2 qualification threshold ($S_{\text{dev}} \ge 0.138$, representing ~4 passing tasks out of 29).
 
 ---
 

@@ -1,20 +1,21 @@
 {
   "format": 1,
   "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
-  "created": "2026-11-22T17:30:27Z",
+  "created": "2026-11-23T16:34:14Z",
   "harness": {
     "name": "plan-verify",
     "model_api": "google-cloud/claude-opus-5-5",
-    "tree": "c5c078d2da6aba51c098ea037ebdf224704c73dad9270244d9ad9f1114b8a0a5",
+    "tree": "994b9a73a14d41b5201e0bc78dbed264da14893d512cd478aedfdc3ff64fadf5",
     "files": {
       ".gitignore": "100644 fda3ba9bfb473fac576abce66431240652b74131",
       "README.md": "100644 9dc6428ddd9d2822d70477e4ff7c8bf466e150f8",
+      "docs/stage1TechnicalWriteup.md": "100644 ecf3718e81563fb8a7a2a5579444df79422102a3",
       "requirements.txt": "100644 13ba6dbe5a230d71da63dd42ee49e86f580056dc",
       "serve.py": "100644 1564667e7a1f1d2e9ca3e6565ae1ba79f10ff838",
       "submission.yaml": "100644 7c501cac7d9517e725bae9471237e9ed5cf1fed0",
       "taskbridge.py": "100644 26cc3d6cf8dbcaed859731ce9a6881f4ca8bfe40"
     },
-    "commit": "1c954271ac5973e58f363411b477a41716d82a87",
+    "commit": "160dc2fdd29ca0db3f7fee953b5d1205b467a0cc",
     "dirty": false
   },
   "tasks": {
@@ -87,16 +88,30 @@
       "skipped": []
     },
     "roof-deck-design": {
+      "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
       "run": "plan-verify-20261122-163807",
       "trial": "roof-deck-design__kpaCsDf",
       "ended": "ok",
       "reward": 0.0,
       "tree": "c5c078d2da6aba51c098ea037ebdf224704c73dad9270244d9ad9f1114b8a0a5",
-      "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
       "files": {
         "filesystem/final_batch4__structural_task7_roof_deck_design__blind/output/submission.zip": "99c85b53801c049b0912280726028a2e0dc023d3"
       },
       "final_message": "d91b10b677226f1eea79d1798b50e65e765ffe66",
+      "deleted": [],
+      "skipped": []
+    },
+    "seismic-diaphragm-shear": {
+      "run": "plan-verify-20261123-161541",
+      "trial": "seismic-diaphragm-shear__JmKz3m6",
+      "ended": "ok",
+      "reward": 0.0,
+      "tree": "994b9a73a14d41b5201e0bc78dbed264da14893d512cd478aedfdc3ff64fadf5",
+      "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
+      "files": {
+        "filesystem/final_batch4__structural_task6_seismic_diaphragm_shear__blind/output/submission.zip": "15cb0ecb3e219d1701294bfdf0fe3f5cb5d208e7"
+      },
+      "final_message": "2f0e42b40eb42840f14bbf01c3e143f089f67551",
       "deleted": [],
       "skipped": []
     }
