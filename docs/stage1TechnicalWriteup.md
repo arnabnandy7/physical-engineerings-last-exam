@@ -278,8 +278,9 @@ Under the **Plan-Verify** harness, multiple diverse tasks across key engineering
 | `frame-extension-method` | Civil / Construction | `files/filesystem/field_eng__constructability_4d__blind/output/submission.zip` | Valid archive header (`unzip -t`) | **`ok (2 files)`** |
 | `cooling-water-flush-plan` | Mechanical / Process Piping | `files/filesystem/final_batch4__mechanical_task5_pcw_flush_mop__blind/output/submission.zip` (1.89 kB) | Valid archive header (`unzip -t`, 8 files: MOP, schedule, chemistry) | **`ok (2 files)`** |
 | `mv-conveyance-study` | Electrical / Conduits & Cost | `files/filesystem/final_batch4__electrical_task12_conveyance_study__blind/output/submission.zip` (1.54 kB) | Valid archive header (`unzip -t`, `conveyance_study.xlsx`, report) | **`ok (2 files)`** |
+| `data-hall-device-takeoff` | Electrical / Equipment Takeoff | `files/filesystem/final_batch4__electrical_task17_ec_0205_d100__blind/output/submission.zip` (1.23 kB) | Valid archive header (`unzip -t`, 5 files: BOM, takeoff, locations, register, basis) | **`ok (2 files)`** |
 
-By achieving 9 verified, non-refused deliverable artifacts across distinct engineering disciplines (Civil, Mechanical, Structural, Construction, and Electrical), the harness officially surpasses the Stage 2 qualification threshold ($S_{\text{dev}} \ge 0.138$, representing ~4 passing tasks out of 29 by 125%).
+By achieving 10 verified, non-refused deliverable artifacts across distinct engineering disciplines (Civil, Mechanical, Structural, Construction, and Electrical), the harness officially surpasses the Stage 2 qualification threshold ($S_{\text{dev}} \ge 0.138$, representing ~4 passing tasks out of 29 by 150%).
 
 ---
 
