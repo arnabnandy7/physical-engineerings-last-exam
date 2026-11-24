@@ -1,21 +1,21 @@
 {
   "format": 1,
   "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
-  "created": "2026-11-23T17:23:53Z",
+  "created": "2026-11-24T16:47:28Z",
   "harness": {
     "name": "plan-verify",
     "model_api": "google-cloud/claude-opus-5-5",
-    "tree": "355612757d2d2aecd8a3bf000ecb982742ae3e84a5b02e98a1d1a415963436c0",
+    "tree": "f2b12b4ba8496671416e29b48c7d2c822d76e4659e68a9d3017badd39922bf0b",
     "files": {
       ".gitignore": "100644 fda3ba9bfb473fac576abce66431240652b74131",
       "README.md": "100644 9dc6428ddd9d2822d70477e4ff7c8bf466e150f8",
-      "docs/stage1TechnicalWriteup.md": "100644 e0676911db39fa648269d70bdc8ee8f0758262cf",
+      "docs/stage1TechnicalWriteup.md": "100644 87491340585b17da45638aac2eaacea0ad7aa165",
       "requirements.txt": "100644 13ba6dbe5a230d71da63dd42ee49e86f580056dc",
-      "serve.py": "100644 1564667e7a1f1d2e9ca3e6565ae1ba79f10ff838",
+      "serve.py": "100644 192d0fdab27faae1bbc2de6bc0e6f4d5b4a25900",
       "submission.yaml": "100644 7c501cac7d9517e725bae9471237e9ed5cf1fed0",
       "taskbridge.py": "100644 26cc3d6cf8dbcaed859731ce9a6881f4ca8bfe40"
     },
-    "commit": "9602cc598e50125da61c3089ce7542499feb34cb",
+    "commit": "4f335c6a9900b4e8803af126097d77eef8f9a27b",
     "dirty": false
   },
   "tasks": {
@@ -116,16 +116,30 @@
       "skipped": []
     },
     "frame-extension-method": {
+      "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
       "run": "plan-verify-20261123-171624",
       "trial": "frame-extension-method__oadSPTz",
       "ended": "ok",
       "reward": 0.0,
       "tree": "355612757d2d2aecd8a3bf000ecb982742ae3e84a5b02e98a1d1a415963436c0",
-      "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
       "files": {
         "filesystem/field_eng__constructability_4d__blind/output/submission.zip": "31e7aae020a4420ab5633b281790447767eebb5a"
       },
       "final_message": "f99646322f22fa1ee62524a8455af493f88f33fc",
+      "deleted": [],
+      "skipped": []
+    },
+    "cooling-water-flush-plan": {
+      "run": "plan-verify-20261124-163939",
+      "trial": "cooling-water-flush-plan__TXkW6Lj",
+      "ended": "ok",
+      "reward": 0.0,
+      "tree": "f2b12b4ba8496671416e29b48c7d2c822d76e4659e68a9d3017badd39922bf0b",
+      "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
+      "files": {
+        "filesystem/final_batch4__mechanical_task5_pcw_flush_mop__blind/output/submission.zip": "7a795dc4bb6af53beada425f57cb2d3344ac8e58"
+      },
+      "final_message": "ed62e14bc710f972b4d7c0b9e8eca03910eb918a",
       "deleted": [],
       "skipped": []
     }
