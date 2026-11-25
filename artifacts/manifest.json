@@ -1,21 +1,21 @@
 {
   "format": 1,
   "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
-  "created": "2026-11-25T07:58:11Z",
+  "created": "2026-11-25T16:48:39Z",
   "harness": {
     "name": "plan-verify",
     "model_api": "google-cloud/claude-opus-5-5",
-    "tree": "9ba75cf5f979d4c648f02ecd72c942347a76b6a2eadc9ceb79d4f3291d7c8044",
+    "tree": "f1b83575470579e8cce5434814c52f8d38e8ed56a17fbb2c6df5748c8d466f8c",
     "files": {
       ".gitignore": "100644 fda3ba9bfb473fac576abce66431240652b74131",
       "README.md": "100644 9dc6428ddd9d2822d70477e4ff7c8bf466e150f8",
-      "docs/stage1TechnicalWriteup.md": "100644 ec473e13080119f342d3ed42beb58a72fd67e123",
+      "docs/stage1TechnicalWriteup.md": "100644 48131f7ce43ca7ba720e46eeb3b3b226f3117008",
       "requirements.txt": "100644 13ba6dbe5a230d71da63dd42ee49e86f580056dc",
       "serve.py": "100644 192d0fdab27faae1bbc2de6bc0e6f4d5b4a25900",
       "submission.yaml": "100644 7c501cac7d9517e725bae9471237e9ed5cf1fed0",
       "taskbridge.py": "100644 26cc3d6cf8dbcaed859731ce9a6881f4ca8bfe40"
     },
-    "commit": "9122ff5151db2646dd060aab3279da398616e90b",
+    "commit": "8f5c26c2a47132c4bb6a463268fcce6c246a1521",
     "dirty": false
   },
   "tasks": {
@@ -245,16 +245,42 @@
       "skipped": []
     },
     "fire-test-validation-memo": {
+      "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
       "run": "retry-fire-memo",
       "trial": "fire-test-validation-memo__KFxhbD8",
       "ended": "ok",
       "reward": 0.0,
       "tree": "9ba75cf5f979d4c648f02ecd72c942347a76b6a2eadc9ceb79d4f3291d7c8044",
-      "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
       "files": {
         "app/files/Projects/CFDME-2025-041_Ocotillo_WUI/Data/dimensioned_assembly Drawing.dwg": "cc97a9fa9d0ebb40c778bc0f64965a2d6f357913"
       },
       "final_message": "637fdfcf4432caf35f6dd53f963bfbdff3b06f26",
+      "deleted": [],
+      "skipped": []
+    },
+    "shoring-design-verification": {
+      "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
+      "run": "shoring-3",
+      "trial": "shoring-design-verification__8VYMGzD",
+      "ended": "ok",
+      "reward": 0.0,
+      "tree": "f1b83575470579e8cce5434814c52f8d38e8ed56a17fbb2c6df5748c8d466f8c",
+      "files": {},
+      "final_message": "5b79a8acc73eb663a3b79f983802866d3e277f6a",
+      "deleted": [],
+      "skipped": []
+    },
+    "fill-compaction-acceptance": {
+      "run": "fill-compaction-acceptance",
+      "trial": "fill-compaction-acceptance__KXraddL",
+      "ended": "ok",
+      "reward": 0.194444,
+      "tree": "f1b83575470579e8cce5434814c52f8d38e8ed56a17fbb2c6df5748c8d466f8c",
+      "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
+      "files": {
+        "filesystem/Thelbridge_Materials_Acceptance_Fill_Compaction_2026-0708.docx": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+      },
+      "final_message": "53b3d42a0dd21011c2d13743679dd90d3c78c23b",
       "deleted": [],
       "skipped": []
     }
