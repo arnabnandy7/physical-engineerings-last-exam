@@ -1,7 +1,7 @@
 {
   "format": 1,
   "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
-  "created": "2026-11-25T16:48:39Z",
+  "created": "2026-11-25T18:00:19Z",
   "harness": {
     "name": "plan-verify",
     "model_api": "google-cloud/claude-opus-5-5",
@@ -271,16 +271,30 @@
       "skipped": []
     },
     "fill-compaction-acceptance": {
+      "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
       "run": "fill-compaction-acceptance",
       "trial": "fill-compaction-acceptance__KXraddL",
       "ended": "ok",
       "reward": 0.194444,
       "tree": "f1b83575470579e8cce5434814c52f8d38e8ed56a17fbb2c6df5748c8d466f8c",
-      "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
       "files": {
         "filesystem/Thelbridge_Materials_Acceptance_Fill_Compaction_2026-0708.docx": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
       },
       "final_message": "53b3d42a0dd21011c2d13743679dd90d3c78c23b",
+      "deleted": [],
+      "skipped": []
+    },
+    "emergency-spillway-check": {
+      "run": "emergency-spillway-check",
+      "trial": "emergency-spillway-check__iGpg9WT",
+      "ended": "ok",
+      "reward": 0.189189,
+      "tree": "f1b83575470579e8cce5434814c52f8d38e8ed56a17fbb2c6df5748c8d466f8c",
+      "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
+      "files": {
+        "filesystem/Memo_to_Callaway_Spillway_2026-10-31.docx": "ab4457412bf4b9b1816510511ffcb5788331f55c"
+      },
+      "final_message": "92e776993846991853faf842edfa6f71ee26625a",
       "deleted": [],
       "skipped": []
     }
