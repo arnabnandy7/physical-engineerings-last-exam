@@ -1,7 +1,7 @@
 {
   "format": 1,
   "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
-  "created": "2026-11-25T18:00:19Z",
+  "created": "2026-11-25T20:35:47Z",
   "harness": {
     "name": "plan-verify",
     "model_api": "google-cloud/claude-opus-5-5",
@@ -15,7 +15,7 @@
       "submission.yaml": "100644 7c501cac7d9517e725bae9471237e9ed5cf1fed0",
       "taskbridge.py": "100644 26cc3d6cf8dbcaed859731ce9a6881f4ca8bfe40"
     },
-    "commit": "8f5c26c2a47132c4bb6a463268fcce6c246a1521",
+    "commit": "427fa162d8dbe8a0287a531225c57dea4db02e91",
     "dirty": false
   },
   "tasks": {
@@ -285,18 +285,78 @@
       "skipped": []
     },
     "emergency-spillway-check": {
+      "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
       "run": "emergency-spillway-check",
       "trial": "emergency-spillway-check__iGpg9WT",
       "ended": "ok",
       "reward": 0.189189,
       "tree": "f1b83575470579e8cce5434814c52f8d38e8ed56a17fbb2c6df5748c8d466f8c",
-      "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
       "files": {
         "filesystem/Memo_to_Callaway_Spillway_2026-10-31.docx": "ab4457412bf4b9b1816510511ffcb5788331f55c"
       },
       "final_message": "92e776993846991853faf842edfa6f71ee26625a",
       "deleted": [],
       "skipped": []
+    },
+    "fire-solve-convergence": {
+      "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
+      "run": "fire-solve-convergence",
+      "trial": "fire-solve-convergence__6yGW9ZH",
+      "ended": "ok",
+      "reward": 0.0,
+      "tree": "f1b83575470579e8cce5434814c52f8d38e8ed56a17fbb2c6df5748c8d466f8c",
+      "files": {
+        "filesystem/CFDME-2025-041_transient_solve_disposition_revA.docx": "f2bc26864dcfa7b114f6a43ce7556fd24eb359fa"
+      },
+      "final_message": "1db9ab036b4b76f5d6de54d5131b9c36c97f4b5f",
+      "deleted": [],
+      "skipped": []
+    },
+    "les-mesh-resolution": {
+      "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
+      "run": "les-mesh-resolution",
+      "trial": "les-mesh-resolution__RfrUqM4",
+      "ended": "ok",
+      "reward": 0.0,
+      "tree": "f1b83575470579e8cce5434814c52f8d38e8ed56a17fbb2c6df5748c8d466f8c",
+      "files": {},
+      "final_message": "2ebbc5ae036c406791edd7477b337d65fce20eb0",
+      "deleted": [],
+      "skipped": []
+    },
+    "footing-settlement-verification": {
+      "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
+      "run": "footing-settlement-verification",
+      "trial": "footing-settlement-verification__ZPj8rpA",
+      "ended": "ok",
+      "reward": 0.0,
+      "tree": "f1b83575470579e8cce5434814c52f8d38e8ed56a17fbb2c6df5748c8d466f8c",
+      "files": {
+        "filesystem/Thelbridge_Verification_Memo_TEMPLATE_v1.docx": "a356e8e4d1d0c70e7ba52a0abd0fac4eb9edd56f",
+        "filesystem/submission/Thelbridge_Verification_Memo_TEMPLATE_v1.docx": "a356e8e4d1d0c70e7ba52a0abd0fac4eb9edd56f"
+      },
+      "final_message": "579ce407caa040be2c478052a6cd603bd0947513",
+      "deleted": [],
+      "skipped": []
+    },
+    "engineers-estimate-check": {
+      "run": "engineers-estimate-check",
+      "trial": "engineers-estimate-check__h6Cq8Mw",
+      "ended": "ok",
+      "reward": 0.0,
+      "tree": "f1b83575470579e8cce5434814c52f8d38e8ed56a17fbb2c6df5748c8d466f8c",
+      "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
+      "files": {
+        "filesystem/Correspondence/Client/Memo_to_Callaway_2026-10-31.docx": "bec5c9572e0c825fbb61c7e85661193026e9d423"
+      },
+      "final_message": "00b99725123c86607b6b79c1bce914be019d4831",
+      "deleted": [],
+      "skipped": [
+        {
+          "path": "/filesystem/Cost\\ Estimates/DSR_Ph3_Engineers_Estimate.xlsx",
+          "reason": "the path has a backslash"
+        }
+      ]
     }
   }
 }

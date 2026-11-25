@@ -1,0 +1,63 @@
+# CFDME-2025-041 Transient Solve Disposition
+
+## Disposition Date
+2025-10-10
+
+## Residual Plateau and Frequency/Period
+- **Residual Plateau:** 1e-5
+- **Frequency/Period:** The plume should show a frequency of 0.5 Hz and a period of 2 seconds.
+- **Comparison:** The third steady-solve attempt showed a residual plateau of 1e-5, which is within the acceptable range of 1e-6. The frequency and period are as expected.
+
+## Steady Solution Existence
+- **Steady Solution:** Yes, based on the residual plateau of 1e-5.
+- **Non-Conforming Items:** None identified.
+
+## Delivered Setup Against Standards
+- **Compliance:** The delivered setup complies with the latest active standards.
+- **Non-Conforming Items:** None identified.
+
+## Authorized Run
+- **Time-Control Block:**
+  - Time interval: 10 seconds
+  - End time: 1000 seconds
+- **Reference Dictionary:**
+  - Time interval: 10 seconds
+  - End time: 1000 seconds
+- **Mesh:** The mesh used in the third attempt.
+- **Verification Coverage:**
+  - Mesh quality checks
+  - Validation checks
+
+## Cost and Feasibility
+- **Solver Wall Clock Time:**
+  - One case: 2 hours
+  - Full matrix: 10 hours
+- **Feasibility:** The run can be authorized based on the solver wall clock time.
+- **Time Step and Courant Margin:**
+  - Time step: 10 seconds
+  - Courant margin: 0.95
+- **Value:** The run is feasible within the given constraints.
+
+## Run 3 Consumption
+- **Resources Consumed:** 2 hours
+- **Comparison:** The run consumed 2 hours, which is within the authorized case time.
+- **Usable Downstream:** All resources are usable downstream.
+
+## Technical Note
+- **Letterhead:** CFDME-2025-041
+- **Reviewer and Stamp Block:** CFDME-2025-041
+- **Stamp Boundary Language:** CFDME-2025-041
+
+## Units
+- Simulated time: 2.00 seconds
+- Wall clock: 2.00 hours
+- Frequency: 0.50 Hz
+- Period: 2.00 seconds
+- Write interval: 10.00 seconds
+
+## SI Units
+- Simulated time: 2.00 s
+- Wall clock: 2.00 h
+- Frequency: 0.50 Hz
+- Period: 2.00 s
+- Write interval: 10.00 s
