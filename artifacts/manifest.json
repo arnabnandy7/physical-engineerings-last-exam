@@ -1,7 +1,7 @@
 {
   "format": 1,
   "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
-  "created": "2026-11-28T10:29:42Z",
+  "created": "2026-11-28T11:43:16Z",
   "harness": {
     "name": "plan-verify",
     "model_api": "google-cloud/claude-opus-5-5",
@@ -592,12 +592,12 @@
       "skipped": []
     },
     "backfeed-energization-reply": {
+      "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
       "run": "backfeed-energization-reply",
       "trial": "backfeed-energization-reply__zqfVwsX",
       "ended": "ok",
       "reward": 0.0,
       "tree": "f1b83575470579e8cce5434814c52f8d38e8ed56a17fbb2c6df5748c8d466f8c",
-      "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
       "files": {
         "app/output/.helpers_cache/db_diff.log": "d8b1bd0acc4bb6675176cb6394aae9b1e98b1b7c",
         "app/output/.helpers_cache/db_diff.txt": "9e1e855b8ed4da8942aad540b3637c63c5218172",
@@ -706,6 +706,18 @@
         "filesystem/Halbray_Backfeed_Work_Package_Script.sh": "0ec53702869faa2eb7d7555432e68126fe2015ee"
       },
       "final_message": "34fa7353eb8b9a6f0b0b3b71c00ec4ad6ddcc067",
+      "deleted": [],
+      "skipped": []
+    },
+    "solar-supplemental-review": {
+      "run": "solar-supplemental-review",
+      "trial": "solar-supplemental-review__pL6eu5T",
+      "ended": "ok",
+      "reward": 0.0,
+      "tree": "f1b83575470579e8cce5434814c52f8d38e8ed56a17fbb2c6df5748c8d466f8c",
+      "dev_set": "85ad6d96fbf76ee64d9fb6339b3bf342b07128a2ebadc0a10f008c95dac01a48",
+      "files": {},
+      "final_message": "f8d9d47a3606077e15debc8d8ae3a10c5f729ba0",
       "deleted": [],
       "skipped": []
     }
